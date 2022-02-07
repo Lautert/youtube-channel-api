@@ -1,0 +1,60 @@
+version: '3.7'
+
+services:
+
+  app:
+    image: 'docker-spring-boot-postgres:latest'
+    build:
+      context: ./yt_channel/docker
+    container_name: app
+    depends_on:
+      - postgres
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/yt_channel
+      - SPRING_DATASOURCE_USERNAME=yt_channel_api
+      - SPRING_DATASOURCE_PASSWORD=Postgres!
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
+      - SPRING_JPA_PROPERTIES_HIBERNATE_SHOW_SQL=false
+      - YTCHANNEL_GOOGLE_YOUTUBE_CREDENTIALS=
+      - SWAGGER_ENABLED=true
+    ports:
+      - "9007:8081"
+    networks:
+      - postgres-compose-network
+
+  postgres:
+    image: postgres:12.9
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root-password
+      - APP_DB_USER=yt_channel_api
+      - APP_DB_PASS=Postgres!
+      - APP_DB_NAME=yt_channel
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/
+    networks:
+      - postgres-compose-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "mail@mail.com"
+      PGADMIN_DEFAULT_PASSWORD: "PgAdmin4!"
+    ports:
+      - "16543:80"
+    depends_on:
+      - postgres
+    networks:
+      - postgres-compose-network
+
+networks: 
+  postgres-compose-network:
+    driver: bridge
