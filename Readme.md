@@ -23,7 +23,7 @@ This application cover some things like:
 ## Docker
 
 ### Deploying the application
-1 - Open to `docker-compose.yml` file and insert your Google API Key in `YTCHANNEL_GOOGLE_YOUTUBE_CREDENTIALS`
+1 - Open the `docker-compose.yml` file and insert your Google API Key in `YTCHANNEL_GOOGLE_YOUTUBE_CREDENTIALS`
 2 - Go to `yt_channel` folder and copy the jar created at `target` folder with `clean install` to `docker` folder
     - `cp target/yt_channel-0.0.1-SNAPSHOT.jar docker/`
 3 - Back to `youtube-channel-api` folder and run `docker-compose up -d` to create all images and start them
