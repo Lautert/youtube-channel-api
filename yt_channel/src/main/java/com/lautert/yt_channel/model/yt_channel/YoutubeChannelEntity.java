@@ -57,7 +57,7 @@ import lombok.NoArgsConstructor;
         targetClass = YoutubeChannelTrackInfoDTO.class,
         columns =
         {
-            @ColumnResult(name = "cd_youtube_channel", type = Long.class),
+            @ColumnResult(name = "cd_youtube_channel", type = BigInteger.class),
             @ColumnResult(name = "ds_channel_id", type = String.class),
             @ColumnResult(name = "ds_name", type = String.class),
             @ColumnResult(name = "tm_registry", type = Date.class),

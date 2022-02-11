@@ -1,10 +1,11 @@
 package com.lautert.yt_channel.dto;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 public class YoutubeChannelTrackInfoDTO
 {
-    private Long cdYoutubeChannel;
+    private BigInteger cdYoutubeChannel;
     private String channelId;
     private String youtubeChannelName;
     private Integer totalVideos;
@@ -13,7 +14,7 @@ public class YoutubeChannelTrackInfoDTO
     private Boolean trackFinished;
 
     public YoutubeChannelTrackInfoDTO (
-        Long cdYoutubeChannel,
+        BigInteger cdYoutubeChannel,
         String channelId,
         String youtubeChannelName,
         Date dateRegistry,
@@ -30,11 +31,11 @@ public class YoutubeChannelTrackInfoDTO
         this.trackFinished = trackFinished;
     }
 
-    public Long getCdYoutubeChannel() {
+    public BigInteger getCdYoutubeChannel() {
         return this.cdYoutubeChannel;
     }
 
-    public void setCdYoutubeChannel(Long cdYoutubeChannel) {
+    public void setCdYoutubeChannel(BigInteger cdYoutubeChannel) {
         this.cdYoutubeChannel = cdYoutubeChannel;
     }
 

@@ -229,7 +229,7 @@ public class YoutubeApiController
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<Object> getListYoutubeChannelTracked (
-        @PathVariable("taskId") Long youtubeChannelId
+        @PathVariable("taskId") BigInteger youtubeChannelId
     )
         throws MessageUserException {
         try
