@@ -1,17 +1,22 @@
 package com.lautert.yt_channel.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
+import java.util.List;
 
-import com.google.api.services.youtube.YouTube;
-import com.google.api.services.youtube.model.Channel;
 import com.lautert.yt_channel.api.youtube.YoutubeAPI;
-import com.lautert.yt_channel.api.youtube.YoutubeChannelAPI;
 import com.lautert.yt_channel.application.SpringWebApplication;
+import com.lautert.yt_channel.exception.MessageUserException;
 import com.lautert.yt_channel.model.yt_channel.YoutubeChannelEntity;
+import com.lautert.yt_channel.model.yt_channel.YoutubeChannelVideoEntity;
 import com.lautert.yt_channel.repository.yt_channel.YoutubeChannelRepository;
+import com.lautert.yt_channel.repository.yt_channel.YoutubeChannelVideoRepository;
 
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -46,14 +51,62 @@ public class YoutubeApiServiceTest
     @Autowired
     YoutubeChannelRepository youtubeChannelRepository;
 
+    @Autowired
+    YoutubeChannelVideoRepository youtubeChannelVideoRepository;
+
+    @Test
+    public void assertThatyoutubeAPIIsNotNull () {
+        assertNotNull(youTubeAPI);
+    }
+
     @Test
     public void assertThatYoutubeApiServiceIsNotNull () {
-        logger.info("assertThatYoutubeApiServiceIsNotNull");
         assertNotNull(youtubeApiService);
     }
 
     @Test
-    public void assertThatAYoutubeChannelIdWasSavedToDatabase () {
+    public void assertThatYoutubeChannelRepositoryIsNotNull () {
+        assertNotNull(youtubeChannelRepository);
+    }
+
+    @Test
+    public void assertThatYoutubeChannelVideoRepositoryIsNotNull () {
+        assertNotNull(youtubeChannelVideoRepository);
+    }
+
+    // START addChannelToTrackScan
+    @Test
+    public void assertThatWillGenereteAMessageExceptionIfParameterIsNull () {
+        try
+        {
+            youtubeApiService.addChannelToTrackScan(null);
+        }
+        catch (MessageUserException e)
+        {
+            assertEquals(
+                e.getMessage(),
+                "Invalid Parameter channelId"
+            );
+        }
+    }
+
+    @Test
+    public void assertThatWillGenereteAMessageExceptionIfParameterVeryBig () {
+        try
+        {
+            youtubeApiService.addChannelToTrackScan("a".repeat(300));
+        }
+        catch (MessageUserException e)
+        {
+            assertEquals(
+                e.getMessage(),
+                "Invalid Parameter channelId"
+            );
+        }
+    }
+
+    @Test
+    public void assertThatAYoutubeChannelWasSavedToDatabase () {
         logger.info("assertThatAYoutubeChannelIdWasSavedToDatabase");
 
         String channelId = "UC-lHJZR3Gqxm24_Vd_AJ5Yw";
@@ -72,11 +125,51 @@ public class YoutubeApiServiceTest
             channelEntity.getDsChannelId()
         );
     }
+    // END addChannelToTrackScan
+
+    // START startTrackScan
+    @Test
+    public void assertThatWillDoNothingBecauseTheListOfChannelIsInvalid () {
+
+        String channelId = "blueberry";
+
+        BigInteger cdYoutubechannel = this.youtubeApiService
+            .addChannelToTrackScan(channelId);
+
+        assertNotNull(cdYoutubechannel);
+
+        YoutubeChannelEntity channelEntity = null;
+        int count = 0;
+
+        while (count < 2)
+        {
+            channelEntity = this.youtubeChannelRepository
+                .findById(cdYoutubechannel)
+                .get();
+
+            assertNotNull(channelEntity);
+            assertEquals(
+                channelId,
+                channelEntity.getDsChannelId()
+            );
+            assertNull(channelEntity.getDsName());
+            assertNull(channelEntity.getDsDescription());
+
+            if (count < 1)
+            {
+                assertFalse(channelEntity.getBlCompleted());
+                this.youtubeApiService.startTrackScan();
+            } else
+            {
+                assertTrue(channelEntity.getBlCompleted());
+            }
+            count++;
+        }
+    }
 
     @Test
-    public void assertThatWillUpdateYoutubeChannelInformations () {
-        logger.info("assertThatWillUpdateYoutubeChannelInformations");
-
+    public void assertThatWillUpdateYoutubeChannelInformations ()
+        throws Exception {
         String channelId = "UCmqofm6gSYnyOG1KLRDLULA";
 
         BigInteger cdYoutubechannel = this.youtubeApiService
@@ -88,32 +181,45 @@ public class YoutubeApiServiceTest
             .findById(cdYoutubechannel)
             .get();
 
-        YouTube youtubeAPI = youTubeAPI.getYouTubeAPI();
-        YoutubeChannelAPI youtubeChannelAPI = new YoutubeChannelAPI(
-            youtubeAPI
+        assertNotNull(channelEntity);
+        assertEquals(
+            channelId,
+            channelEntity.getDsChannelId()
         );
+        assertNull(channelEntity.getDsName());
+        assertNull(channelEntity.getDsDescription());
+        assertFalse(channelEntity.getBlCompleted());
 
-        Channel ytChannel = youtubeChannelAPI
-            .getChannelDetailsByChannelId(
-                channelEntity.getDsChannelId()
-            );
-
-        assertNotNull(ytChannel);
-
-        this.youtubeApiService
-            .updateChannelInformation(
-                ytChannel,
-                channelEntity
-            );
+        this.youtubeApiService.startTrackScan();
 
         channelEntity = this.youtubeChannelRepository
             .findById(cdYoutubechannel)
             .get();
 
+        assertNotNull(channelEntity);
         assertEquals(
-            "Vida de Suporte",
-            channelEntity.getDsName()
+            channelEntity.getDsName(),
+            "Vida de Suporte"
         );
-        assertNotNull(channelEntity.getTmPublishedAt());
+        assertEquals(
+            channelEntity.getDsDescription(),
+            "Canal de desenhos animados do Vida de Suporte, que mostra de maneira bem humorada situações de quem trabalha como Técnico de Informática."
+        );
+        assertEquals(
+            channelEntity.getTmPublishedAt(),
+            (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"))
+                .parse("2014-07-06 22:19:28")
+        );
+        assertTrue(channelEntity.getBlCompleted());
+
+        List<YoutubeChannelVideoEntity> videos = this.youtubeChannelVideoRepository
+            .findByYoutubeChannelEntity(channelEntity);
+
+        assertEquals(
+            videos.size(),
+            50
+        );
     }
+    // END startTrackScan
+
 }

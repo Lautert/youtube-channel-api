@@ -23,15 +23,18 @@ public class YoutubeChannelAPI
     }
 
     public ChannelListResponse getChannelDetailsByUserName (
-        String userName, String pageToken
+        String userName,
+        String pageToken
     ) {
         try
         {
             YouTube.Channels.List search = youTubeAPI
                 .channels()
-                .list("id,snippet,brandingSettings,contentDetails,statistics,topicDetails");
+                .list(
+                    "id,snippet,brandingSettings,contentDetails,statistics,topicDetails"
+                );
             search.setForUsername(userName);
-            if(pageToken != null)
+            if (pageToken != null)
             {
                 search.setPageToken(pageToken);
             }
@@ -52,10 +55,18 @@ public class YoutubeChannelAPI
         {
             YouTube.Channels.List search = youTubeAPI
                 .channels()
-                .list("id,snippet,brandingSettings,contentDetails,statistics,topicDetails");
+                .list(
+                    "id,snippet,brandingSettings,contentDetails,statistics,topicDetails"
+                );
             search.setId(channelId);
 
-            return search.execute().getItems().get(0);
+            if (search.execute().getItems() != null)
+            {
+                return search.execute().getItems().get(0);
+            } else
+            {
+                return null;
+            }
         }
         catch (IOException e)
         {

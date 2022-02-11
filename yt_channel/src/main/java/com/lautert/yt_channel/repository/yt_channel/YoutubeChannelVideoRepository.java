@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 import com.lautert.yt_channel.dto.YoutubeVideoInfoDTO;
+import com.lautert.yt_channel.model.yt_channel.YoutubeChannelEntity;
 import com.lautert.yt_channel.model.yt_channel.YoutubeChannelVideoEntity;
 
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,8 @@ public interface YoutubeChannelVideoRepository extends CrudRepository<YoutubeCha
 
     @Query(name = "getListYoutubeVideoInfo", nativeQuery = true)
     List<YoutubeVideoInfoDTO> findListYoutubeVideoByChannel (
-        @Param("channelId") Long channelId
+        @Param("channelId") BigInteger channelId
     );
+
+    List<YoutubeChannelVideoEntity> findByYoutubeChannelEntity(YoutubeChannelEntity youtubeChannelEntity);
 }

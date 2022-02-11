@@ -20,15 +20,18 @@ import com.lautert.yt_channel.dto.ResponseDataListYoutubeChannelTrackDTO;
 import com.lautert.yt_channel.dto.ResponseDataListYoutubeVideoInfoDTO;
 import com.lautert.yt_channel.dto.YoutubeChannelTrackInfoDTO;
 import com.lautert.yt_channel.dto.YoutubeVideoInfoDTO;
+import com.lautert.yt_channel.exception.MessageUserException;
 import com.lautert.yt_channel.model.yt_channel.YoutubeChannelEntity;
 import com.lautert.yt_channel.model.yt_channel.YoutubeChannelVideoEntity;
 import com.lautert.yt_channel.repository.yt_channel.YoutubeChannelRepository;
 import com.lautert.yt_channel.repository.yt_channel.YoutubeChannelVideoRepository;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 /**
@@ -83,7 +86,10 @@ public class YoutubeApiService
                     pageToken
                 );
 
-            if (listChannel != null && listChannel.getPageInfo().getTotalResults() > 0)
+            if (
+                listChannel != null
+                    && listChannel.getPageInfo().getTotalResults() > 0
+            )
             {
                 for (Channel channel : listChannel.getItems())
                 {
@@ -102,21 +108,47 @@ public class YoutubeApiService
     @Transactional
     public BigInteger addChannelToTrackScan (
         String channelId
-    ) {
+    )
+        throws MessageUserException {
+        if (channelId == null)
+        {
+            throw new MessageUserException("Invalid Parameter channelId", 400);
+        }
 
         YoutubeChannelEntity channel = this.youtubeChannelRepository
             .findByDsChannelId(channelId);
 
-        if (channel == null)
+        try
         {
-            channel = new YoutubeChannelEntity();
-            channel.setDsChannelId(channelId);
+            if (channel == null)
+            {
+                channel = new YoutubeChannelEntity();
+                channel.setDsChannelId(channelId);
 
-            this.youtubeChannelRepository.save(channel);
-        } else
+                this.youtubeChannelRepository.save(channel);
+            } else
+            {
+                channel.setBlCompleted(false);
+                this.youtubeChannelRepository.save(channel);
+            }
+        }
+        catch (DataIntegrityViolationException e)
         {
-            channel.setBlCompleted(false);
-            this.youtubeChannelRepository.save(channel);
+            if (
+                ExceptionUtils
+                    .getRootCause(e)
+                    .getMessage()
+                    .matches(".*value too long.*")
+            )
+            {
+                throw new MessageUserException(
+                    "Invalid Parameter channelId",
+                    400
+                );
+            } else
+            {
+                throw e;
+            }
         }
 
         return channel.getCdYoutubeChannel();
@@ -145,16 +177,25 @@ public class YoutubeApiService
                     .getChannelDetailsByChannelId(
                         channelEntity.getDsChannelId()
                     );
-                this
-                    .updateChannelInformation(
-                        ytChannel,
-                        channelEntity
-                    );
-                this
-                    .searchAllVideosByChannel(
-                        channelEntity,
-                        youtubeSearchAPI
-                    );
+
+                if (ytChannel != null)
+                {
+                    this
+                        .updateChannelInformation(
+                            ytChannel,
+                            channelEntity
+                        );
+                    this
+                        .searchAllVideosByChannel(
+                            channelEntity,
+                            youtubeSearchAPI
+                        );
+                } else
+                {
+                    channelEntity.setBlCompleted(true);
+                    channelEntity.setTmLastUpdate(new Date());
+                    this.youtubeChannelRepository.save(channelEntity);
+                }
             }
         }
     }
@@ -329,7 +370,7 @@ public class YoutubeApiService
 
     // SRP: Get a list of videos by channel
     public ResponseDataListYoutubeVideoInfoDTO getListYoutubeVideoByChannel (
-        Long channelId
+        BigInteger channelId
     ) {
 
         ResponseDataListYoutubeVideoInfoDTO responseData = new ResponseDataListYoutubeVideoInfoDTO();
